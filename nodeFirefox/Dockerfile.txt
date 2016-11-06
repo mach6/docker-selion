@@ -7,13 +7,26 @@ USER root
 #=========
 RUN apt-get update -qqy \
   && apt-get -qqy --no-install-recommends install \
-    firefox \
-  && rm -rf /var/lib/apt/lists/*
+    libgtk-3.0 \
+    libasound2 \
+    libdbus-glib-1-2 \
+    libxt6 \
+    bzip2 \
+    libfreetype6 \
+    libfontconfig1 \
+  && rm -rf /var/lib/apt/lists/* /var/cache/apt/* /tmp/*
+
+ARG FIREFOX_VERSION="46.0b9"
+RUN wget --no-verbose https://ftp.mozilla.org/pub/firefox/releases/$FIREFOX_VERSION/linux-x86_64/en-US/firefox-$FIREFOX_VERSION.tar.bz2 \
+&& tar xvjf firefox-$FIREFOX_VERSION.tar.bz2 \
+&& mv firefox /usr/local/firefox-$FIREFOX_VERSION \
+&& ln -s /usr/local/firefox-$FIREFOX_VERSION/firefox-bin $SELION_HOME/firefox \
+&& rm firefox-$FIREFOX_VERSION.tar.bz2
 
 #========================
 # Selenium Configuration
 #========================
 COPY config.json $SELION_HOME/config.json
+RUN chown -R seluser:seluser $SELION_HOME
 
-RUN chown -R seluser $SELION_HOME
 USER seluser
