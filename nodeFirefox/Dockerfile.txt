@@ -8,12 +8,13 @@ USER root
 RUN apt-get update -qqy \
   && apt-get -qqy --no-install-recommends install \
     firefox \
-  && rm -rf /var/lib/apt/lists/*
+  && apt-get purge -y --auto-remove wget \
+  && rm -rf /var/lib/apt/lists/* /var/cache/apt/* /tmp/*
 
 #========================
 # Selenium Configuration
 #========================
 COPY config.json $SELION_HOME/config.json
+RUN chown -R seluser:seluser $SELION_HOME
 
-RUN chown -R seluser $SELION_HOME
 USER seluser
