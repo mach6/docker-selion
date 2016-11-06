@@ -18,22 +18,24 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key
   && apt-get update -qqy \
   && apt-get -qqy install \
     ${CHROME_VERSION:-google-chrome-stable} \
-  && rm /etc/apt/sources.list.d/google-chrome.list \
-  && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+  && rm -rf /etc/apt/sources.list.d/google-chrome.list /var/cache/apt/* /tmp/*
 
 #==================
 # Chrome webdriver
 #==================
 ENV CHROME_DRIVER_VERSION 2.25
 RUN wget --no-verbose -O /tmp/chromedriver_linux64.zip https://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip \
-  && rm -rf $SELION_HOME/chromedriver \
   && unzip /tmp/chromedriver_linux64.zip -d $SELION_HOME \
-  && rm /tmp/chromedriver_linux64.zip
+  && rm /tmp/chromedriver_linux64.zip \
+  && mv $SELION_HOME/chromedriver $SELION_HOME/chromedriver-$CHROME_DRIVER_VERSION \
+  && chmod 755 $SELION_HOME/chromedriver-$CHROME_DRIVER_VERSION \
+  && ln -fs $SELION_HOME/chromedriver-$CHROME_DRIVER_VERSION $SELION_HOME/chromedriver
 
 #========================
 # Selenium Configuration
 #========================
 COPY config.json $SELION_HOME/config.json
+RUN chown -R seluser:seluser $SELION_HOME
 
 #=================================
 # Chrome Launch Script Modication
@@ -41,6 +43,7 @@ COPY config.json $SELION_HOME/config.json
 COPY chrome_launcher.sh /opt/google/chrome/google-chrome
 RUN chmod +x /opt/google/chrome/google-chrome
 
-RUN chown -R seluser $SELION_HOME
-
 USER seluser
+
+# Fixes https://github.com/SeleniumHQ/docker-selenium/issues/87
+ENV DBUS_SESSION_BUS_ADDRESS=/dev/null

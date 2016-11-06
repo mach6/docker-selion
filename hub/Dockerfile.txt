@@ -1,5 +1,7 @@
 MAINTAINER Selion <selion@googlegroups.com>
 
+USER root
+
 EXPOSE 4444
 
 # SeLion hub Configuration
@@ -19,10 +21,8 @@ COPY generate_config $SELION_HOME/generate_config
 RUN chmod 755 $SELION_HOME/generate_config
 
 COPY entry_point.sh $SELION_HOME/entry_point.sh
-
-RUN chown -R seluser $SELION_HOME
 RUN chmod 755 $SELION_HOME/entry_point.sh
 
-USER seluser
+RUN chown -R seluser:seluser $SELION_HOME
 
-CMD $SELION_HOME/entry_point.sh
+USER seluser

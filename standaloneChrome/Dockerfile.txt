@@ -7,6 +7,7 @@ USER root
 #====================================
 COPY entry_point.sh $SELION_HOME/entry_point.sh
 RUN chmod +x $SELION_HOME/entry_point.sh
+RUN chown -R seluser:seluser $SELION_HOME
 
 #==========================================
 # Don't need this file from the base image
