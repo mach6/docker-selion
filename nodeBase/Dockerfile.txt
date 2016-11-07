@@ -8,12 +8,7 @@ ENV DEBCONF_NONINTERACTIVE_SEEN true
 #==============
 # Xvfb
 #==============
-RUN apt-get clean \
-  && apt-get update -qqy \
-  && apt-get -qqy install xvfb \
-  && rm -rf /var/lib/apt/lists/* \
-  /tmp/* \
-  /var/cache/apt/*
+RUN apk add --no-cache --update xvfb=1.18.3-r0
 
 #==============================
 # Scripts to run Selion Node

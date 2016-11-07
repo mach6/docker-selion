@@ -1,41 +1,25 @@
-FROM ubuntu:16.04
+FROM openjdk:8u92-jre-alpine
 MAINTAINER Selion <selion@googlegroups.com>
 
 # Builds on docker selenium (https://github.com/SeleniumHQ/docker-selenium) which we customize for SeLion.
 # This is copy of selenium base.  Inheriting FROM selenium base didn't allow over-riding some
-# choices already made in selenium base. We also start with a smaller ubuntu base image.
+# choices already made in selenium base. We also build off an alpine base
 
 # This Docker is just a base for the other SeLion docker images.
 
-#================================================
-# Remove the installed ca-certificates
-#================================================
-#RUN apt-get -yqq remove ca-certificates \
-# && rm -rf /tmp/* /var/cache/apt/* /var/lib/apt/lists/*
-
-#================================================
-# Customize sources for apt-get
-#================================================
-RUN echo "deb http://archive.ubuntu.com/ubuntu xenial main universe" > /etc/apt/sources.list \
-  && echo "deb http://archive.ubuntu.com/ubuntu xenial-updates main universe" >> /etc/apt/sources.list \
-  && echo "deb http://security.ubuntu.com/ubuntu xenial-security main universe" >> /etc/apt/sources.list
-
 #==============================
-# Miscellaneous packages
-# Includes minimal runtime used for executing non GUI Java programs
+# Switch java to /dev/urandom
 #==============================
-RUN apt-get -yqq update \
-  && apt-get -yqq --no-install-recommends install ca-certificates openjdk-8-jre-headless wget unzip \
-  && sed -i 's/securerandom\.source=file:\/dev\/random/securerandom\.source=file:\/dev\/urandom/' ./usr/lib/jvm/java-8-openjdk-amd64/jre/lib/security/java.security \
-  && rm -rf /tmp/* /var/cache/apt/* /var/lib/apt/lists/*
+RUN sed -i 's/securerandom\.source=file:\/dev\/random/securerandom\.source=file:\/dev\/urandom/' ./usr/lib/jvm/java-1.8-openjdk/jre/lib/security/java.security
 
 #===================
 # Timezone settings
 #===================
 ENV TZ "US/Pacific"
-RUN ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime \
-  && echo "${TZ}" > /etc/timezone \
-  && dpkg-reconfigure --frontend noninteractive tzdata
+RUN apk add --no-cache --update tzdata=2016d-r0 bash=4.3.42-r3 \
+ && cp /usr/share/zoneinfo/${TZ} /etc/localtime \
+ && echo "${TZ}" > /etc/timezone \
+ && apk del --no-cache tzdata
 
 # The Selenium server version (Keep in sync with Selion server)
 ENV SELENIUM_VERSION=%SELENIUM_VERSION%
@@ -52,14 +36,15 @@ ENV SELION_GRID_VERSION=%SELION_GRID_VERSION%
 #=============================
 # Add selion + selenium server
 #=============================
-RUN mkdir -p ${SELION_HOME} \
-  && wget --no-verbose "$REDIRECT_URL?r=$REPO&g=com.paypal.selion&a=SeLion-Grid&c=jar-with-dependencies&v=$SELION_GRID_VERSION" -O $SELION_HOME/SeLion-Grid.jar \
-  && wget --no-verbose $SEL_SERVER/$SELENIUM_VERSION/selenium-server-standalone-$SELENIUM_VERSION.$SELENIUM_FIX.jar -O $SELION_HOME/selenium-server-standalone.jar
+RUN apk add --no-cache --update openssl=1.0.2j-r0 \
+  && mkdir -p ${SELION_HOME} \
+  && wget -q "$REDIRECT_URL?r=$REPO&g=com.paypal.selion&a=SeLion-Grid&c=jar-with-dependencies&v=$SELION_GRID_VERSION" -O $SELION_HOME/SeLion-Grid.jar \
+  && wget -q $SEL_SERVER/$SELENIUM_VERSION/selenium-server-standalone-$SELENIUM_VERSION.$SELENIUM_FIX.jar -O $SELION_HOME/selenium-server-standalone.jar
 
 #========================================
 # Add normal user
 #========================================
-RUN useradd seluser --shell /bin/bash --create-home
+RUN adduser -s /bin/bash -D seluser
 
 #=====================================================================
 # Add an empty SeLion download.json. The dependencies will be in place
